@@ -6,8 +6,8 @@
 #include <omp.h>
 
 int main() {
-    const size_t rows = 1000;
-    const size_t cols = 100;
+    const size_t rows = 10000;
+    const size_t cols = 1000;
     std::vector<std::vector<float>> A(rows, std::vector<float>(cols));
     std::vector<std::vector<float>> B(rows, std::vector<float>(cols));
     std::vector<std::vector<float>> sum(rows, std::vector<float>(cols));
