@@ -1,73 +1,59 @@
 #include <iostream>
 #include <vector>
-#include <algorithm>
+#include <cstdlib>
+#include <ctime>
 #include <chrono>
-#include <random>
 #include <omp.h>
 
-using namespace std;
-
-void parallel_quicksort(vector<int>& arr, size_t left, size_t right) {
+void quickSort(std::vector<int>& arr, int left, int right) {
     if (left >= right) return;
 
     int pivot = arr[(left + right) / 2];
-    size_t i = left, j = right;
+    int i = left, j = right;
 
     while (i <= j) {
         while (arr[i] < pivot) i++;
         while (arr[j] > pivot) j--;
         if (i <= j) {
-            swap(arr[i], arr[j]);
+            std::swap(arr[i], arr[j]);
             i++;
-            if (j > 0) j--;
+            j--;
         }
     }
 
-    #pragma omp task shared(arr)
-    if (j > left) parallel_quicksort(arr, left, j);
-
-    #pragma omp task shared(arr)
-    if (i < right) parallel_quicksort(arr, i, right);
-
-    #pragma omp taskwait
-}
-
-vector<int> generate_random_array(size_t size) {
-    vector<int> arr(size);
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> dis(1, 10000000);
-
-    for (size_t i = 0; i < size; ++i) {
-        arr[i] = dis(gen);
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        quickSort(arr, left, j);
+        #pragma omp section
+        quickSort(arr, i, right);
     }
-    return arr;
 }
 
 int main() {
-    constexpr size_t ARRAY_SIZE = 10000000;
-    constexpr int NUM_RUNS = 5;
-    auto arr = generate_random_array(ARRAY_SIZE);
+    const int N = 1000000;
+    std::vector<int> arr(N);
+
+    srand(time(0));
+    for (int i = 0; i < N; ++i) {
+        arr[i] = rand() % 1000000;
+    }
 
     for (int threads : {2, 4, 8}) {
         omp_set_num_threads(threads);
-        cout << "Threads: " << threads << endl;
+        std::cout << "=== Threads: " << threads << " ===\n";
 
-        for (int i = 0; i < NUM_RUNS; ++i) {
-            auto arr_copy = arr;
-            auto start = chrono::high_resolution_clock::now();
+        for (int run = 1; run <= 5; ++run) {
+            std::vector<int> tempArr = arr;
 
-            #pragma omp parallel
-            {
-                #pragma omp single
-                parallel_quicksort(arr_copy, 0, arr_copy.size() - 1);
-            }
+            auto start = std::chrono::high_resolution_clock::now();
+            quickSort(tempArr, 0, N - 1);
+            auto end = std::chrono::high_resolution_clock::now();
 
-            auto end = chrono::high_resolution_clock::now();
-            chrono::duration<double> elapsed = end - start;
-
-            cout << "Run " << i+1 << ": " << elapsed.count() << "s" << endl;
+            std::chrono::duration<double> elapsed = end - start;
+            std::cout << "Run " << run << ": " << elapsed.count() << " sec\n";
         }
+        std::cout << "\n";
     }
 
     return 0;
