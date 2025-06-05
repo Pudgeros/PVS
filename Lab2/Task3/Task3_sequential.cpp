@@ -5,7 +5,7 @@
 #include <chrono>
 
 int main() {
-    const size_t N = 1000000;
+    const size_t N = 100000000;
     std::vector<float> A(N), B(N), sum(N), diff(N), prod(N), div(N);
 
     std::srand(static_cast<unsigned>(std::time(nullptr)));
