@@ -3,11 +3,11 @@
 #BSUB -J MyJob
 #BSUB -P MyProject
 #BSUB -W 01:00
-#BSUB -n 2
-#BSUB -R "span[ptile=1]"
+#BSUB -n 4 //ОБЩЕЕ КОЛ-ВО
+#BSUB -R "span[ptile=2 //КОЛ-ВО НА ЦП]"
 #BSUB -e error.log
 #BSUB -o output.log
 
 module load mpi/openmpi-x86_64
-./mpi 20000
+./mpi 100000000 //РАЗМЕР МАССИВА
 
