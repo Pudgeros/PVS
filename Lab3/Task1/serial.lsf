@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#BSUB -J MyJob
+#BSUB -P MyProject
+#BSUB -W 00:10
+#BSUB -n 2
+#BSUB -oo output.log
+#BSUB -eo error.log
+
+for ((i=0; i<100; i++)); do
+    ./serial 
+    sleep 0.5
+done
+
+awk '/Time spent:/ {sum += $3; count++} END {if (count > 0) print "Average time:", sum / count, "seconds"}' output.log
