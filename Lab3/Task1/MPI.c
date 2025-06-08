@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     int* array = NULL;
     long long local_sum = 0;
     long long global_sum = 0;
+    double total_time = 0.0;
 
     if (rank == 0) {
         array = (int*)malloc(n * sizeof(int));
@@ -30,13 +31,8 @@ int main(int argc, char* argv[]) {
             MPI_Finalize();
             return 1;
         }
-        srand(time(NULL));
-        for (int i = 0; i < n; i++) {
-            array[i] = rand() % 100;
-        }
     }
 
-    // Разбиваем массив на части для каждого процесса
     int local_n = n / size;
     int* local_array = (int*)malloc(local_n * sizeof(int));
     if (local_array == NULL) {
@@ -45,28 +41,37 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Начало замера времени
-    double start_time, end_time;
-    if (rank == 0) {
-        start_time = MPI_Wtime();
+    // Запускаем цикл 100 раз
+    for (int iter = 0; iter < 100; ++iter) {
+        if (rank == 0) {
+            srand(time(NULL) + iter); // Изменяем seed для rand, чтобы получить разные значения
+            for (int i = 0; i < n; i++) {
+                array[i] = rand() % 100;
+            }
+        }
+
+        double start_time, end_time;
+        if (rank == 0) {
+            start_time = MPI_Wtime();
+        }
+
+        MPI_Scatter(array, local_n, MPI_INT, local_array, local_n, MPI_INT, 0, MPI_COMM_WORLD);
+
+        local_sum = 0;
+        for (int i = 0; i < local_n; i++) {
+            local_sum += local_array[i];
+        }
+
+        MPI_Reduce(&local_sum, &global_sum, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+
+        if (rank == 0) {
+            end_time = MPI_Wtime();
+            total_time += end_time - start_time;
+        }
     }
 
-    // Распределяем части массива между процессами
-    MPI_Scatter(array, local_n, MPI_INT, local_array, local_n, MPI_INT, 0, MPI_COMM_WORLD);
-
-    // Локальное вычисление суммы
-    for (int i = 0; i < local_n; i++) {
-        local_sum += local_array[i];
-    }
-
-    // Собираем результаты на процесс 0
-    MPI_Reduce(&local_sum, &global_sum, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-
-    // Конец замера времени
     if (rank == 0) {
-        end_time = MPI_Wtime();
-        printf("Sum: %lld\n", global_sum);
-        printf("Time spent: %f seconds\n", end_time - start_time);
+        printf("Average time spent over 100 runs: %f seconds\n", total_time / 100);
         free(array);
     }
 
