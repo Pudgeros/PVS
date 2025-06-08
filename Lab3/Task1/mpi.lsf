@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+#BSUB -J MyJob
+#BSUB -P MyProject
+#BSUB -W 01:00
+#BSUB -n 2
+#BSUB -R "span[ptile=1]"
+#BSUB -e error.log
+#BSUB -o output.log
+
+> output.log
+
+module load mpi/openmpi-x86_64
+for ((i=0; i<1; i++)); do
+        ./mpi 20000
+        sleep 0.5
+done
+
+awk '/Time spent:/ {sum += $3; count++} END {if (count > 0) print "Average time:", sum / count, "seconds"}' output.log
