@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     int SIZE = atoi(argv[1]);
     int THREADS = atoi(argv[2]);
 
-    if (SIZE <= 0 || THREADS <= 0) {
+    if (SIZE <= 0 || THREADS <= 0 || THREADS > 512) {
         printf("Error: array size and threads count must be positive integers\n");
         return 1;
     }
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 
     // Определяем количество блоков
     int blocks = (SIZE + THREADS - 1) / THREADS;
-    if (blocks > 128) blocks = 128; // Ограничиваем максимальное количество блоков
+    if (blocks > THREADS) blocks = THREADS; // Ограничиваем максимальное количество блоков
 
     // Запускаем ядро CUDA с динамически выделяемой shared memory
     reduce_sum<<<blocks, THREADS, THREADS * sizeof(unsigned long long)>>>(d_array, d_result, SIZE);
